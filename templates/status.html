@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Process Status</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    {% for s in status %}
+        <div class="status">
+            <h2>{{ s.name }}</h2>
+            <p>URL: {{ s.url }}</p>
+            <p>Start: {{ s.start }} / Stop: {{ s.stop }} / Now: {{ s.now }}</p>
+            <p>State: {{ s.state }}</p>
+        </div>
+    {% endfor %}
+</body>
+</html>

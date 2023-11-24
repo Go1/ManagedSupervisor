@@ -1,0 +1,12 @@
+{
+    "supervisors": [
+      {
+        "url": "http://raspberrypi45.local:9001/RPC2",
+        "processes": ["streamrec15", "streamrec30"]
+      },
+      {
+        "url": "http://raspberrypi46.local:9001/RPC2",
+        "processes": ["streamrec15", "streamrec30"]
+      }
+    ]
+  }
