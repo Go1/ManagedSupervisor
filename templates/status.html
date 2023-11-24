@@ -11,6 +11,9 @@
             <p>URL: {{ s.url }}</p>
             <p>Start: {{ s.start }} / Stop: {{ s.stop }} / Now: {{ s.now }}</p>
             <p>State: {{ s.state }}</p>
+            <a href="{{ url_for('start_process', supervisor_url=s.url, process_name=s.name) }}">Start</a>
+            <a href="{{ url_for('stop_process', supervisor_url=s.url, process_name=s.name) }}">Stop</a>
+            <a href="{{ url_for('restart_process', supervisor_url=s.url, process_name=s.name) }}">Restart</a>        
         </div>
     {% endfor %}
 </body>

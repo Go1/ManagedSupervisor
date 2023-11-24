@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect, url_for
 import xmlrpc.client
 import json
 from datetime import datetime
@@ -43,6 +43,34 @@ def get_process_status():
                 except xmlrpc.client.Fault as err:
                     status.append({'error': err.faultString})
     return render_template('status.html', status=status)
+
+@app.route('/start/<path:supervisor_url>/<process_name>')
+def start_process(supervisor_url, process_name):
+    with xmlrpc.client.ServerProxy(supervisor_url) as server:
+        try:
+            server.supervisor.startProcess(process_name)
+        except xmlrpc.client.Fault as err:
+            print(f"Error: {err.faultString}")
+    return redirect(url_for('get_process_status'))
+
+@app.route('/stop/<path:supervisor_url>/<process_name>')
+def stop_process(supervisor_url, process_name):
+    with xmlrpc.client.ServerProxy(supervisor_url) as server:
+        try:
+            server.supervisor.stopProcess(process_name)
+        except xmlrpc.client.Fault as err:
+            print(f"Error: {err.faultString}")
+    return redirect(url_for('get_process_status'))
+
+@app.route('/restart/<path:supervisor_url>/<process_name>')
+def restart_process(supervisor_url, process_name):
+    with xmlrpc.client.ServerProxy(supervisor_url) as server:
+        try:
+            server.supervisor.stopProcess(process_name)
+            server.supervisor.startProcess(process_name)
+        except xmlrpc.client.Fault as err:
+            print(f"Error: {err.faultString}")
+    return redirect(url_for('get_process_status'))
 
 if __name__ == '__main__':
     app.run(debug=True)
