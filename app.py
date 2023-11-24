@@ -37,7 +37,6 @@ def get_process_status():
                         'name': info['name'],
                         'start': convert_to_jst(info['start']),
                         'stop': convert_to_jst(info['stop']),
-                        'now': convert_to_jst(info['now']),
                         'state': info['statename']
                     })
                 except xmlrpc.client.Fault as err:
@@ -86,5 +85,9 @@ def restart_process(host, process_name):
                     print(f"Error: {err.faultString}")
     return redirect(url_for('get_process_status'))
 
+# Add current_time to the application context
+app.jinja_env.globals.update(current_time=datetime.now)
+
 if __name__ == '__main__':
     app.run(debug=True)
+
