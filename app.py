@@ -29,18 +29,21 @@ def get_process_status():
         supervisor_url = supervisor['url']
         process_names = supervisor['processes']
         processes = []
-        with xmlrpc.client.ServerProxy(supervisor_url) as server:
-            for process_name in process_names:
-                try:
-                    info = server.supervisor.getProcessInfo(process_name)
-                    processes.append({
-                        'name': info['name'],
-                        'start': convert_to_jst(info['start']),
-                        'stop': convert_to_jst(info['stop']),
-                        'state': info['statename']
-                    })
-                except xmlrpc.client.Fault as err:
-                    processes.append({'error': err.faultString})
+        try:
+            with xmlrpc.client.ServerProxy(supervisor_url) as server:
+                for process_name in process_names:
+                    try:
+                        info = server.supervisor.getProcessInfo(process_name)
+                        processes.append({
+                            'name': info['name'],
+                            'start': convert_to_jst(info['start']),
+                            'stop': convert_to_jst(info['stop']),
+                            'state': info['statename']
+                        })
+                    except xmlrpc.client.Fault as err:
+                        processes.append({'error': err.faultString})
+        except Exception as e:
+            processes.append({'error': f"Failed to connect to {supervisor_url}. Error: {str(e)}"})
         status.append({
             'host': supervisor['host'],
             'url': supervisor_url,
@@ -90,4 +93,3 @@ app.jinja_env.globals.update(current_time=datetime.now)
 
 if __name__ == '__main__':
     app.run(debug=True)
-
