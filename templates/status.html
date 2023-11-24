@@ -16,18 +16,22 @@
                 <div class="card-body">
                     <h5 class="card-title"><i class="bi bi-server"></i> {{ s.host }}</h5>
                     {% for p in s.processes %}
-                        <p class="card-text">
-                            <i class="bi bi-memory"></i>
-                            {{ p.name }} - 
-                            <span class="{{ 'bg-success text-white' if p.state == 'RUNNING' else 'bg-danger text-white' }}">
-                                {{ p.state }}
-                            </span> 
-                            <br>Start: {{ p.start }}
-                            <br>Stop: {{ p.stop }}
-                        </p>
-                        <a href="{{ url_for('start_process', host=s.host, process_name=p.name) }}" class="btn btn-primary">Start</a>
-                        <a href="{{ url_for('stop_process', host=s.host, process_name=p.name) }}" class="btn btn-primary">Stop</a>
-                        <a href="{{ url_for('restart_process', host=s.host, process_name=p.name) }}" class="btn btn-primary">Restart</a>
+                        <div class="card mb-2">
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <i class="bi bi-memory"></i>
+                                    {{ p.name }} - 
+                                    <span class="{{ 'bg-success text-white' if p.state == 'RUNNING' else 'bg-danger text-white' }}">
+                                        {{ p.state }}
+                                    </span> 
+                                    <br>Start: {{ p.start }}
+                                    <br>Stop: {{ p.stop }}
+                                </p>
+                                <a href="{{ url_for('start_process', host=s.host, process_name=p.name) }}" class="btn btn-primary">Start</a>
+                                <a href="{{ url_for('stop_process', host=s.host, process_name=p.name) }}" class="btn btn-primary">Stop</a>
+                                <a href="{{ url_for('restart_process', host=s.host, process_name=p.name) }}" class="btn btn-primary">Restart</a>
+                            </div>
+                        </div>
                     {% endfor %}
                 </div>
             </div>
