@@ -5,16 +5,25 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
+    <h1>Process Status</h1>
+    <ul>
     {% for s in status %}
-        <div class="status">
-            <h2>{{ s.name }}</h2>
-            <p>URL: {{ s.url }}</p>
-            <p>Start: {{ s.start }} / Stop: {{ s.stop }} / Now: {{ s.now }}</p>
-            <p>State: {{ s.state }}</p>
-            <a href="{{ url_for('start_process', supervisor_url=s.url, process_name=s.name) }}">Start</a>
-            <a href="{{ url_for('stop_process', supervisor_url=s.url, process_name=s.name) }}">Stop</a>
-            <a href="{{ url_for('restart_process', supervisor_url=s.url, process_name=s.name) }}">Restart</a>        
-        </div>
+        <li>
+            <h2>{{ s.host }}</h2>
+            <ul>
+            {% for p in s.processes %}
+                <li>
+                    <p>{{ p.name }} - {{ p.state }} - {{ p.start }} - {{ p.stop }} - {{ p.now }}</p>
+                    <p>
+                        <a href="{{ url_for('start_process', host=s.host, process_name=p.name) }}">Start</a>
+                        <a href="{{ url_for('stop_process', host=s.host, process_name=p.name) }}">Stop</a>
+                        <a href="{{ url_for('restart_process', host=s.host, process_name=p.name) }}">Restart</a>
+                    </p>
+                </li>
+            {% endfor %}
+            </ul>
+        </li>
     {% endfor %}
+    </ul>
 </body>
 </html>
