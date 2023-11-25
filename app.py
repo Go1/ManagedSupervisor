@@ -11,6 +11,7 @@ from datetime import datetime
 import pytz
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
+from sqlalchemy_utils import database_exists, create_database
 
 db = SQLAlchemy()
 
@@ -22,6 +23,8 @@ def create_app():
     db.init_app(app)
 
     with app.app_context():
+        if not database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
+            create_database(app.config['SQLALCHEMY_DATABASE_URI'])
         db.create_all()  # Create the database tables
 
     return app
