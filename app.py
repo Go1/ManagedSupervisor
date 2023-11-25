@@ -12,11 +12,21 @@ import pytz
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with your own secret key
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/your_database.db'  # SQLite database path
+db = SQLAlchemy()
 
-db = SQLAlchemy(app)
+def create_app():
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with your own secret key
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/your_database.db'  # SQLite database path
+
+    db.init_app(app)
+
+    with app.app_context():
+        db.create_all()  # Create the database tables
+
+    return app
+
+app = create_app()
 
 class ManagedSupervisor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -181,6 +191,4 @@ def home():
 app.jinja_env.globals.update(current_time=datetime.now)
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(host='0.0.0.0', debug=True)
