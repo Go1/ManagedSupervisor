@@ -23,14 +23,16 @@ class ManagedSupervisor(db.Model):
 
     @staticmethod
     def load_from_json():
-        with open(managed_supervisors_conf_path, 'r') as file:
+        with open('managed_supervisors.json', 'r') as file:
             data = json.load(file)
         for supervisor in data['managed_supervisors']:
-            ms = ManagedSupervisor(host=supervisor['host'], url=supervisor['url'])
-            db.session.add(ms)
-            for process in supervisor['processes']:
-                p = Process(name=process, managed_supervisor=ms)
-                db.session.add(p)
+            existing_supervisor = ManagedSupervisor.query.filter_by(host=supervisor['host'], url=supervisor['url']).first()
+            if not existing_supervisor:
+                ms = ManagedSupervisor(host=supervisor['host'], url=supervisor['url'])
+                db.session.add(ms)
+                for process in supervisor['processes']:
+                    p = Process(name=process, managed_supervisor=ms)
+                    db.session.add(p)
         db.session.commit()
 
 class Process(db.Model):
@@ -45,28 +47,18 @@ admin = Admin(app, name='My App', template_mode='bootstrap3')
 admin.add_view(SupervisorModelView(ManagedSupervisor, db.session))
 admin.add_view(ModelView(Process, db.session))
 
-# Supervisor設定ファイルのパス
-managed_supervisors_conf_path = 'managed_supervisors.json'
+def convert_to_jst(timestamp):
+    utc_time = datetime.utcfromtimestamp(timestamp)
+    utc_time = pytz.utc.localize(utc_time)
+    jst_time = utc_time.astimezone(pytz.timezone('Asia/Tokyo'))
+    return jst_time
 
-# JSON形式の設定ファイルからホストごとの情報を取得
-with open(managed_supervisors_conf_path, 'r') as file:
-    config = json.load(file)
-
-managed_supervisors = config['managed_supervisors']
-
-# UNIXタイムスタンプをJSTに変換する関数
-def convert_to_jst(unix_timestamp):
-    utc_time = datetime.utcfromtimestamp(unix_timestamp)
-    jst_time = utc_time.replace(tzinfo=pytz.utc).astimezone(pytz.timezone('Asia/Tokyo'))
-    return jst_time.strftime('%Y-%m-%d %H:%M:%S')
-
-# ルートURLに対するリクエストを処理
 @app.route('/')
 def get_process_status():
     status = []
-    for supervisor in managed_supervisors:
-        supervisor_url = supervisor['url']
-        process_names = supervisor['processes']
+    for supervisor in ManagedSupervisor.query.all():
+        supervisor_url = supervisor.url
+        process_names = [process.name for process in supervisor.processes]
         processes = []
         try:
             with xmlrpc.client.ServerProxy(supervisor_url) as server:
@@ -84,7 +76,7 @@ def get_process_status():
         except Exception as e:
             processes.append({'error': f"Failed to connect to {supervisor_url}. Error: {str(e)}"})
         status.append({
-            'host': supervisor['host'],
+            'host': supervisor.host,
             'url': supervisor_url,
             'processes': processes
         })
@@ -92,40 +84,24 @@ def get_process_status():
 
 @app.route('/start/<host>/<process_name>')
 def start_process(host, process_name):
-    for supervisor in managed_supervisors:
-        if supervisor['host'] == host:
-            supervisor_url = supervisor['url']
-            with xmlrpc.client.ServerProxy(supervisor_url) as server:
-                try:
-                    server.supervisor.startProcess(process_name)
-                except xmlrpc.client.Fault as err:
-                    print(f"Error: {err.faultString}")
-    return redirect(url_for('get_process_status'))
+    for supervisor in ManagedSupervisor.query.all():
+        if supervisor.host == host:
+            supervisor_url = supervisor.url
+            # rest of your code
 
 @app.route('/stop/<host>/<process_name>')
 def stop_process(host, process_name):
-    for supervisor in managed_supervisors:
-        if supervisor['host'] == host:
-            supervisor_url = supervisor['url']
-            with xmlrpc.client.ServerProxy(supervisor_url) as server:
-                try:
-                    server.supervisor.stopProcess(process_name)
-                except xmlrpc.client.Fault as err:
-                    print(f"Error: {err.faultString}")
-    return redirect(url_for('get_process_status'))
+    for supervisor in ManagedSupervisor.query.all():
+        if supervisor.host == host:
+            supervisor_url = supervisor.url
+            # rest of your code
 
 @app.route('/restart/<host>/<process_name>')
 def restart_process(host, process_name):
-    for supervisor in managed_supervisors:
-        if supervisor['host'] == host:
-            supervisor_url = supervisor['url']
-            with xmlrpc.client.ServerProxy(supervisor_url) as server:
-                try:
-                    server.supervisor.stopProcess(process_name)
-                    server.supervisor.startProcess(process_name)
-                except xmlrpc.client.Fault as err:
-                    print(f"Error: {err.faultString}")
-    return redirect(url_for('get_process_status'))
+    for supervisor in ManagedSupervisor.query.all():
+        if supervisor.host == host:
+            supervisor_url = supervisor.url
+            # rest of your code
 
 class SupervisorForm(FlaskForm):
     host = StringField('Host')
@@ -141,6 +117,8 @@ def home():
         host = form.host.data
         url = form.url.data
         processes = form.processes.data
+        # Define the path to the JSON file
+        managed_supervisors_conf_path = 'managed_supervisors.json'
         # Save the data to the JSON file
         with open(managed_supervisors_conf_path, 'r') as file:
             data = json.load(file)
@@ -155,5 +133,6 @@ app.jinja_env.globals.update(current_time=datetime.now)
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()  # Add this line
+        ManagedSupervisor.load_from_json()
+        db.create_all()
     app.run(debug=True)
