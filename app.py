@@ -78,9 +78,9 @@ class SupervisorModelView(ModelView):
     }
 
 class ProcessModelView(ModelView):
-    column_list = ('name', 'managed_supervisor.host')  # Add this line
+    column_list = ('name', 'managed_supervisor.host')
     column_labels = {
-        'managed_supervisor.host': 'Managed Supervisor Host'  # Add this line
+        'managed_supervisor.host': 'Managed Supervisor Host'
     }
 
 admin = Admin(app, name='My App', template_mode='bootstrap3')
@@ -173,6 +173,6 @@ app.jinja_env.globals.update(current_time=datetime.now)
 
 if __name__ == '__main__':
     with app.app_context():
-        ManagedSupervisor.load_from_json()
         db.create_all()
-    app.run(debug=True)
+        ManagedSupervisor.load_from_json()
+    app.run(host='0.0.0.0', debug=True)
