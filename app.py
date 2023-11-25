@@ -127,21 +127,42 @@ def start_process(host, process_name):
     for supervisor in ManagedSupervisor.query.all():
         if supervisor.host == host:
             supervisor_url = supervisor.url
-            # rest of your code
+            with xmlrpc.client.ServerProxy(supervisor_url) as server:
+                try:
+                    result = server.supervisor.startProcess(process_name)
+                    if result:  # If the process was successfully started
+                        return redirect(url_for('get_process_status'))
+                except xmlrpc.client.Fault as err:
+                    return 'Error: ' + err.faultString, 500
+    return 'Error: Could not start process', 500
 
 @app.route('/stop/<host>/<process_name>')
 def stop_process(host, process_name):
     for supervisor in ManagedSupervisor.query.all():
         if supervisor.host == host:
             supervisor_url = supervisor.url
-            # rest of your code
+            with xmlrpc.client.ServerProxy(supervisor_url) as server:
+                try:
+                    result = server.supervisor.stopProcess(process_name)
+                    if result:  # If the process was successfully stopped
+                        return redirect(url_for('get_process_status'))
+                except xmlrpc.client.Fault as err:
+                    return 'Error: ' + err.faultString, 500
+    return 'Error: Could not stop process', 500
 
 @app.route('/restart/<host>/<process_name>')
 def restart_process(host, process_name):
     for supervisor in ManagedSupervisor.query.all():
         if supervisor.host == host:
             supervisor_url = supervisor.url
-            # rest of your code
+            with xmlrpc.client.ServerProxy(supervisor_url) as server:
+                try:
+                    result = server.supervisor.restartProcess(process_name)
+                    if result:  # If the process was successfully restarted
+                        return redirect(url_for('get_process_status'))
+                except xmlrpc.client.Fault as err:
+                    return 'Error: ' + err.faultString, 500
+    return 'Error: Could not restart process', 500
 
 class SupervisorForm(FlaskForm):
     host = StringField('Host')
