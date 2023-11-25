@@ -24,20 +24,6 @@ class ManagedSupervisor(db.Model):
     url = db.Column(db.String(200), nullable=False)
     processes = db.relationship('Process', backref='managed_supervisor', lazy=True)
 
-    @staticmethod
-    def load_from_json():
-        with open('managed_supervisors.json', 'r') as file:
-            data = json.load(file)
-        for supervisor in data['managed_supervisors']:
-            existing_supervisor = ManagedSupervisor.query.filter_by(host=supervisor['host'], url=supervisor['url']).first()
-            if not existing_supervisor:
-                ms = ManagedSupervisor(host=supervisor['host'], url=supervisor['url'])
-                db.session.add(ms)
-                for process in supervisor['processes']:
-                    p = Process(name=process, managed_supervisor=ms)
-                    db.session.add(p)
-        db.session.commit()
-
 class Process(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
@@ -177,15 +163,17 @@ def home():
         # Process the form data
         host = form.host.data
         url = form.url.data
-        processes = form.processes.data
-        # Define the path to the JSON file
-        managed_supervisors_conf_path = 'managed_supervisors.json'
-        # Save the data to the JSON file
-        with open(managed_supervisors_conf_path, 'r') as file:
-            data = json.load(file)
-        data['managed_supervisors'] = [{'host': host, 'url': url, 'processes': processes.split(',')}]
-        with open(managed_supervisors_conf_path, 'w') as file:
-            json.dump(data, file)
+        processes = form.processes.data.split(',')
+        # Check if the supervisor already exists
+        existing_supervisor = ManagedSupervisor.query.filter_by(host=host, url=url).first()
+        if not existing_supervisor:
+            # Create a new ManagedSupervisor and save it to the database
+            ms = ManagedSupervisor(host=host, url=url)
+            db.session.add(ms)
+            for process in processes:
+                p = Process(name=process, managed_supervisor=ms)
+                db.session.add(p)
+            db.session.commit()
         return redirect(url_for('home'))
     return render_template('supervisor_setting.html', form=form)
 
@@ -195,5 +183,4 @@ app.jinja_env.globals.update(current_time=datetime.now)
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-        ManagedSupervisor.load_from_json()
     app.run(host='0.0.0.0', debug=True)
