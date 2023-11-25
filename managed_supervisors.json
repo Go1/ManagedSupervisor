@@ -1,14 +1,14 @@
 {
     "managed_supervisors": [
       {
-        "host": "raspberrypi45",        
-        "url": "http://raspberrypi45.local:9001/RPC2",
-        "processes": ["streamrec15", "streamrec30"]
+        "host": "host1",        
+        "url": "http://host1.local:9001/RPC2",
+        "processes": ["process1", "process2"]
       },
       {
-        "host": "raspberrypi46",
-        "url": "http://raspberrypi46.local:9001/RPC2",
-        "processes": ["streamrec15", "streamrec30"]
+        "host": "host2",
+        "url": "http://host2.local:9001/RPC2",
+        "processes": ["process3", "process4"]
       }
     ]
   }
