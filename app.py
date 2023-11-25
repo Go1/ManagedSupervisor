@@ -15,22 +15,6 @@ from sqlalchemy_utils import database_exists, create_database
 
 db = SQLAlchemy()
 
-def create_app():
-    app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with your own secret key
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/your_database.db'  # SQLite database path
-
-    db.init_app(app)
-
-    with app.app_context():
-        if not database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
-            create_database(app.config['SQLALCHEMY_DATABASE_URI'])
-        db.create_all()  # Create the database tables
-
-    return app
-
-app = create_app()
-
 class ManagedSupervisor(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     host = db.Column(db.String(50), nullable=False)
@@ -81,6 +65,22 @@ class ProcessModelView(ModelView):
     column_labels = {
         'managed_supervisor.host': 'Managed Supervisor Host'
     }
+
+def create_app():
+    app = Flask(__name__)
+    app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with your own secret key
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/your_database.db'  # SQLite database path
+
+    db.init_app(app)
+
+    with app.app_context():
+        if not database_exists(app.config['SQLALCHEMY_DATABASE_URI']):
+            create_database(app.config['SQLALCHEMY_DATABASE_URI'])
+        db.create_all()  # Create the database tables
+
+    return app
+
+app = create_app()
 
 admin = Admin(app, name='My App', template_mode='bootstrap3')
 admin.add_view(SupervisorModelView(ManagedSupervisor, db.session))
@@ -190,8 +190,9 @@ def home():
         return redirect(url_for('home'))
     return render_template('supervisor_setting.html', form=form)
 
+
 # Add current_time to the application context
 app.jinja_env.globals.update(current_time=datetime.now)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', port=8000, debug=True)
