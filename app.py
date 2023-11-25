@@ -1,13 +1,16 @@
 from flask import Flask, render_template, redirect, url_for, request
 from flask_admin import Admin, BaseView, expose, AdminIndexView
 from flask_admin.contrib.sqla import ModelView
+from flask_admin.contrib.sqla.ajax import QueryAjaxModelLoader
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, FieldList, FormField
+from wtforms.form import Form
 import xmlrpc.client
 import json
 from datetime import datetime
 import pytz
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import or_
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key'  # Replace with your own secret key
@@ -40,12 +43,49 @@ class Process(db.Model):
     name = db.Column(db.String(50), nullable=False)
     managed_supervisor_id = db.Column(db.Integer, db.ForeignKey('managed_supervisor.id'), nullable=False)
 
+class ProcessForm(Form):
+    name = StringField('Name')
+
+class ProcessAjaxModelLoader(QueryAjaxModelLoader):
+    def get_list(self, term, offset=0, limit=10):
+        query = self.session.query(self.model)
+
+        filters = (self.model.name.contains(term),)
+
+        if self.filters:
+            filters += tuple(self.filters)
+
+        query = query.filter(or_(*filters))
+
+        if self.order_by:
+            query = query.order_by(self.order_by)
+
+        results = query.offset(offset).limit(limit).all()
+
+        # Customize the format of the results
+        results = [(str(getattr(item, self.get_pk_value(item))) + " - " + getattr(item, self.value_field), item) for item in results]
+
+        return results
+
 class SupervisorModelView(ModelView):
     form_columns = ['host', 'url', 'processes']
+    column_list = ('host', 'url', 'processes')
+    column_formatters = {
+        'processes': lambda v, c, m, p: ', '.join([proc.name for proc in m.processes])
+    }
+    form_ajax_refs = {
+        'processes': ProcessAjaxModelLoader('processes', db.session, Process, fields=['name'], page_size=10, placeholder='Please select a process')
+    }
+
+class ProcessModelView(ModelView):
+    column_list = ('name', 'managed_supervisor.host')  # Add this line
+    column_labels = {
+        'managed_supervisor.host': 'Managed Supervisor Host'  # Add this line
+    }
 
 admin = Admin(app, name='My App', template_mode='bootstrap3')
 admin.add_view(SupervisorModelView(ManagedSupervisor, db.session))
-admin.add_view(ModelView(Process, db.session))
+admin.add_view(ProcessModelView(Process, db.session))
 
 def convert_to_jst(timestamp):
     utc_time = datetime.utcfromtimestamp(timestamp)
