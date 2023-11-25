@@ -1,5 +1,5 @@
 {
-    "supervisors": [
+    "managed_supervisors": [
       {
         "host": "raspberrypi45",        
         "url": "http://raspberrypi45.local:9001/RPC2",
